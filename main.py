@@ -2,6 +2,8 @@ import mysql.connector as mysql
 import pandas as pd
 import streamlit as st
 from streamlit_option_menu import option_menu
+import matplotlib.pyplot as plt
+import seaborn as sns
 
 class Crpm():
     def __init__(self):
@@ -264,6 +266,61 @@ class Crpm():
         cust_tab = pd.DataFrame(tab, columns=col_name)
         st.dataframe(cust_tab)
 
+    
+    def customer_analysis(self):
+        cus1 = '''SELECT * FROM customer'''
+        self.cursor.execute(cus1)
+        tab1 = self.cursor.fetchall()
+        col_name = [des[0] for des in self.cursor.description]
+        cus_tab = pd.DataFrame(tab1, columns=col_name)
+
+        cus2 = '''SELECT * FROM purchase'''
+        self.cursor.execute(cus2)
+        tab2 = self.cursor.fetchall()
+        col_name = [des[0] for des in self.cursor.description]
+        pur_tab = pd.DataFrame(tab2, columns=col_name)
+
+        #Joining two tables
+        cp_tab = cus_tab.merge(pur_tab, on='cus_id')
+
+        cus_sales = cp_tab.groupby('name')['total_price'].sum().reset_index()
+        cus_sales = cus_sales.sort_values(by='total_price', ascending=False)
+        
+        plt.figure(figsize=(10, 5))
+        sns.barplot(data=cus_sales, x='name', y='total_price')
+        plt.xlabel('Customer Name')
+        plt.ylabel("Total Expense")
+        plt.title('Total Expense per Customer')
+        plt.show()
+
+    
+    def product_analysis(self):
+        cus1 = '''SELECT * FROM product'''
+        self.cursor.execute(cus1)
+        tab1 = self.cursor.fetchall()
+        col_name = [des[0] for des in self.cursor.description]
+        prod_tab = pd.DataFrame(tab1, columns=col_name)
+
+        cus2 = '''SELECT * FROM purchase'''
+        self.cursor.execute(cus2)
+        tab2 = self.cursor.fetchall()
+        col_name = [des[0] for des in self.cursor.description]
+        pur_tab = pd.DataFrame(tab2, columns=col_name)
+
+        #Joining two tables
+        cp_tab = prod_tab.merge(pur_tab, on='cus_id')
+
+        cus_sales = cp_tab.groupby('name')['total_price'].sum().reset_index()
+        cus_sales = cus_sales.sort_values(by='total_price', ascending=False)
+        
+
+        plt.figure(figsize=(10,6))
+        sns.barplot(x='name', y='total_price', data=prod_sales)
+        plt.title('Products Revenue')
+        plt.xlabel('Product Name')
+        plt.ylabel('Revenue')
+        plt.show()
+
 
 #-----------------------------------------------MAIN PROGRAM-----------------------------------------------#
 
@@ -473,4 +530,9 @@ if __name__ == "__main__":
                 tables.insert_purchase_table(cus_id, prod_id, qty)
 
     elif option == 'Analytics':
-        pass      
+        col1, col2 = st.columns(2)
+        with col1:
+            tables.customer_analysis()
+
+        with col2:
+            tables.product_analysis()
